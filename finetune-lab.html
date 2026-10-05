@@ -1,0 +1,592 @@
+<title>Fine-Tune Your First Model</title>
+<style>
+/* Layout: single-column lab notebook — sticky progress rail, step cards, copy-to-run code cells */
+:root{
+  --bg:#f4f6f5; --surface:#ffffff; --surface-2:#eef2f0; --line:#dde4e1;
+  --fg:#12201b; --muted:#5c6b64; --faint:#8a9a92;
+  --accent:#e2593f; --accent-ink:#b7destroy;
+  --mint:#15936a; --mint-bg:#e3f3ec;
+  --amber:#b97400; --amber-bg:#fbf0dc;
+  --code-bg:#0f1a16; --code-fg:#e7ede9; --code-mint:#7fe3b0; --code-coral:#ff8a6b; --code-dim:#7d8f87; --code-amber:#ffc96b;
+  --radius:14px; --maxw:820px;
+  --sans:"Inter","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono","SFMono-Regular",ui-monospace,"DejaVu Sans Mono",monospace;
+  --display:"Fraunces",Georgia,serif;
+}
+:root{ --accent-ink:#9c3a24; }
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#0d1512; --surface:#131e19; --surface-2:#182621; --line:#26352e;
+  --fg:#edf2ef; --muted:#9db0a7; --faint:#6e8178;
+  --accent:#ff6b4a; --accent-ink:#ffb49f;
+  --mint:#5fd9a2; --mint-bg:#13291f;
+  --amber:#ffc264; --amber-bg:#2b2213;
+  --code-bg:#0a120f; --code-fg:#e7ede9;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1512; --surface:#131e19; --surface-2:#182621; --line:#26352e;
+  --fg:#edf2ef; --muted:#9db0a7; --faint:#6e8178;
+  --accent:#ff6b4a; --accent-ink:#ffb49f;
+  --mint:#5fd9a2; --mint-bg:#13291f;
+  --amber:#ffc264; --amber-bg:#2b2213;
+  --code-bg:#0a120f; --code-fg:#e7ede9;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.6;margin:0}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:20px;padding-block:0}
+
+/* sticky progress rail */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex;align-items:center;gap:14px;padding-block:12px}
+.topbar .brand{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.progress-track{flex:1;height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;min-width:0}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--mint));border-radius:99px;transition:width .4s ease}
+.progress-pct{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:3.2em;text-align:right}
+.theme-btn{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:15px;flex:none}
+.theme-btn:hover{color:var(--fg)}
+
+/* hero */
+.hero{padding-block:52px 28px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 16px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(34px,7vw,56px);line-height:1.02;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.hero p.lede{font-size:clamp(17px,2.4vw,20px);color:var(--muted);max-width:60ch;margin:20px 0 0}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12.5px;padding:7px 12px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.chip b{color:var(--fg);font-weight:600}
+
+/* promise bar */
+.ribbon{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-top:30px}
+.ribbon div{background:var(--surface);padding:16px 14px}
+.ribbon .k{font-family:var(--mono);font-size:clamp(20px,4vw,27px);color:var(--accent);font-weight:600;letter-spacing:-.01em}
+.ribbon .l{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+@media(max-width:560px){.ribbon{grid-template-columns:1fr}}
+
+/* section intros */
+.band{margin-top:48px;padding-top:30px;border-top:1px solid var(--line)}
+.band-tag{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+h2{font-family:var(--display);font-weight:600;font-size:clamp(23px,4vw,31px);letter-spacing:-.015em;margin:8px 0 0;text-wrap:balance}
+.band > p{color:var(--muted);margin:12px 0 0;max-width:62ch}
+
+/* step card */
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-top:20px;overflow:hidden;scroll-margin-top:90px}
+.step.done{border-color:color-mix(in srgb,var(--mint) 50%,var(--line))}
+.step-head{display:flex;align-items:flex-start;gap:14px;padding:18px 20px;cursor:pointer;user-select:none}
+.step-num{flex:none;width:34px;height:34px;border-radius:9px;background:var(--surface-2);color:var(--muted);font-family:var(--mono);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.25s}
+.step.done .step-num{background:var(--mint);color:#06130d}
+.step-titles{flex:1;min-width:0}
+.step-titles h3{margin:0;font-size:17.5px;font-weight:600;letter-spacing:-.01em}
+.step-titles .sub{color:var(--muted);font-size:13.5px;margin-top:2px}
+.step-chev{flex:none;color:var(--faint);transition:transform .25s;margin-top:6px}
+.step.open .step-chev{transform:rotate(90deg)}
+.step-body{padding:0 20px 22px;display:none}
+.step.open .step-body{display:block}
+.step-body > *:first-child{margin-top:0}
+.step-body p{margin:14px 0;color:var(--fg)}
+.step-body p.note{color:var(--muted);font-size:14.5px}
+
+/* code cell */
+.cell{margin:16px 0;border-radius:11px;overflow:hidden;border:1px solid var(--line)}
+.cell-bar{display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);padding:7px 12px;border-bottom:1px solid var(--line)}
+.cell-bar .tag{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+.copy-btn{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:4px 11px;border-radius:7px;cursor:pointer;transition:.15s;white-space:nowrap}
+.copy-btn:hover{color:var(--fg);border-color:var(--faint)}
+.copy-btn.ok{color:var(--mint);border-color:var(--mint)}
+pre{margin:0;background:var(--code-bg);color:var(--code-fg);font-family:var(--mono);font-size:13px;line-height:1.65;padding:15px 16px;overflow-x:auto}
+pre .c{color:var(--code-dim)}
+pre .s{color:var(--code-mint)}
+pre .k{color:var(--code-coral)}
+pre .n{color:var(--code-amber)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:1.5px 6px;border-radius:5px}
+
+/* callouts */
+.call{border-radius:11px;padding:15px 17px;margin:16px 0;font-size:14.5px;line-height:1.6}
+.call .h{font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.call.why{background:var(--mint-bg);border:1px solid color-mix(in srgb,var(--mint) 35%,transparent)}
+.call.why .h{color:var(--mint)}
+.call.warn{background:var(--amber-bg);border:1px solid color-mix(in srgb,var(--amber) 35%,transparent)}
+.call.warn .h{color:var(--amber)}
+.call p{margin:6px 0 0}
+.call p:first-of-type{margin-top:0}
+
+/* expected-output + checkpoint */
+.expect{background:var(--surface-2);border:1px dashed var(--line);border-radius:10px;padding:13px 15px;margin:16px 0;font-size:13.5px}
+.expect .h{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.expect pre{background:transparent;color:var(--fg);padding:0;font-size:12.5px}
+.check{display:flex;gap:12px;align-items:flex-start;margin-top:18px;padding:14px 16px;background:var(--surface-2);border-radius:10px}
+.check input{margin-top:3px;width:18px;height:18px;accent-color:var(--mint);flex:none;cursor:pointer}
+.check label{font-size:14px;cursor:pointer}
+.check label b{color:var(--mint)}
+
+/* loss chart */
+.chartcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:20px}
+.chartcard h3{margin:0 0 4px;font-size:17px}
+.chartcard .cap{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+
+/* reflect / toggle answer */
+details.q{background:var(--surface);border:1px solid var(--line);border-radius:11px;margin:14px 0;padding:0}
+details.q summary{cursor:pointer;padding:14px 17px;font-weight:600;font-size:15px;list-style:none;display:flex;gap:9px;align-items:center}
+details.q summary::-webkit-details-marker{display:none}
+details.q summary::before{content:"?";font-family:var(--mono);color:var(--amber);font-weight:700;background:var(--amber-bg);width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}
+details.q[open] summary{border-bottom:1px solid var(--line)}
+details.q .ans{padding:14px 17px;color:var(--fg);font-size:14.5px}
+details.q .ans p{margin:0 0 10px}
+details.q .ans p:last-child{margin:0}
+
+/* finish */
+.finish{margin-top:48px;padding:32px 24px;border-radius:var(--radius);background:linear-gradient(135deg,var(--surface),var(--surface-2));border:1px solid var(--line);text-align:center}
+.finish h2{margin:0}
+.finish p{color:var(--muted);max-width:52ch;margin:14px auto 0}
+.finish .share{margin-top:20px;font-family:var(--mono);font-size:13px;color:var(--faint)}
+footer{text-align:center;color:var(--faint);font-size:13px;padding:40px 0 60px}
+footer a{color:var(--muted)}
+a{color:var(--accent-ink)}
+.kbd{font-family:var(--mono);font-size:.82em;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.reset{background:none;border:none;color:var(--faint);font-size:12.5px;cursor:pointer;text-decoration:underline;font-family:var(--sans)}
+</style>
+
+<div class="topbar">
+  <div class="wrap">
+    <span class="brand">Fine-Tune Lab</span>
+    <div class="progress-track"><div class="progress-fill" id="pfill"></div></div>
+    <span class="progress-pct" id="ppct">0%</span>
+    <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">◐</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Hands-on · ~45 min · free GPU</p>
+    <h1>Fine-tune your first language model</h1>
+    <p class="lede">A self-guided lab. Copy each cell into a free Google Colab notebook, run it, and watch a 1.5-billion-parameter model learn a voice in under a minute — then watch it fail, and learn why. No ML background needed. If you can run a Python cell, you can finish this.</p>
+    <div class="meta-row">
+      <span class="chip">🟢 <b>Free</b> Colab T4 GPU</span>
+      <span class="chip">🐍 Run cells, no setup</span>
+      <span class="chip">✅ Progress saved in your browser</span>
+    </div>
+    <div class="ribbon">
+      <div><div class="k">1.18%</div><div class="l">of the model is what you actually train</div></div>
+      <div><div class="k">~37s</div><div class="l">for loss to fall from 4.0 → 1.2</div></div>
+      <div><div class="k">0</div><div class="l">dollars, GPUs owned, or ML team</div></div>
+    </div>
+  </header>
+
+  <!-- ================= PART 0 ================= -->
+  <section class="band">
+    <div class="band-tag">Before you start</div>
+    <h2>The one idea that makes all of this click</h2>
+    <p>Fine-tuning changes a model's <b>behaviour</b> — its voice, format, and style. It does <b>not</b> teach the model facts. Hold this the whole way through; every step below is built on it.</p>
+    <div class="call why">
+      <div class="h">◆ Behaviour vs. facts</div>
+      <p><b>Behaviour → train it in.</b> "Always answer in warm, second-person JSON" is stable. Safe to bake into the weights.</p>
+      <p><b>Facts → keep in the prompt.</b> "Payout is 48 hours", "we cover 6 cities" — these change. Bake them into weights and the model will confidently repeat the stale value forever.</p>
+      <p style="margin-top:9px"><b>The test:</b> if it could change next quarter, would a trained-in version become a lie? If yes → prompt, not weights.</p>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-tag">Setup · one minute</div>
+    <h2>Open a free GPU notebook</h2>
+    <p>Everything runs in Google Colab — a free notebook in your browser, no install.</p>
+
+    <div class="step" data-step="s0">
+      <div class="step-head">
+        <div class="step-num">0</div>
+        <div class="step-titles"><h3>Create the notebook & turn on the GPU</h3><div class="sub">The #1 thing beginners miss</div></div>
+        <div class="step-chev">▸</div>
+      </div>
+      <div class="step-body">
+        <p>1. Go to <a href="https://colab.research.google.com" target="_blank" rel="noopener">colab.research.google.com</a> → <b>New notebook</b>.</p>
+        <p>2. Menu → <b>Runtime → Change runtime type → T4 GPU → Save</b>. (This restarts the session — normal.)</p>
+        <p>3. Paste this into the first cell and run it (<span class="kbd">Shift</span>+<span class="kbd">Enter</span>):</p>
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 1 · confirm the GPU</span><button class="copy-btn">Copy</button></div><pre><span class="k">import</span> torch
+<span class="k">print</span>(<span class="s">"CUDA available:"</span>, torch.cuda.is_available())
+<span class="k">print</span>(<span class="s">"GPU:"</span>, torch.cuda.get_device_name(<span class="n">0</span>) <span class="k">if</span> torch.cuda.is_available() <span class="k">else</span> <span class="s">"NONE — turn on T4"</span>)</pre></div>
+        <div class="expect"><div class="h">You should see</div><pre>CUDA available: True
+GPU: Tesla T4</pre></div>
+        <div class="call warn"><div class="h">▲ If it says False</div><p>The GPU isn't attached. Redo step 2 (Runtime → Change runtime type → T4), then re-run. Don't continue until this prints <code>True</code> — nothing below works on CPU.</p></div>
+        <div class="check"><input type="checkbox" id="c0"><label for="c0">I see <b>CUDA available: True</b> — GPU is on.</label></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 1 — SEE IT FAIL ================= -->
+  <section class="band">
+    <div class="band-tag">Part 1 · feel the problem</div>
+    <h2>Watch the base model fail first</h2>
+    <p>Before training anything, see what a small model does <i>cold</i>. This failure is your baseline and your motivation.</p>
+
+    <div class="step" data-step="s1">
+      <div class="step-head">
+        <div class="step-num">1</div>
+        <div class="step-titles"><h3>Load the model and give it the task</h3><div class="sub">~2 min to download the first time</div></div>
+        <div class="step-chev">▸</div>
+      </div>
+      <div class="step-body">
+        <p>We'll teach the model to write a short social post as strict JSON, in a specific brand voice. First, install the fast training library (one warning about <code>fsspec</code> is harmless — ignore it):</p>
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 2 · install</span><button class="copy-btn">Copy</button></div><pre><span class="c"># fast QLoRA training + inference</span>
+!pip install -q unsloth</pre></div>
+        <p>Now load the 1.5B model and ask it to do the task with <b>no training</b>:</p>
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 3 · the cold baseline</span><button class="copy-btn">Copy</button></div><pre><span class="k">from</span> unsloth <span class="k">import</span> FastLanguageModel
+
+model, tok = FastLanguageModel.from_pretrained(
+    <span class="s">"unsloth/Qwen2.5-1.5B-Instruct"</span>, max_seq_length=<span class="n">2048</span>, load_in_4bit=<span class="k">True</span>)
+FastLanguageModel.for_inference(model)
+
+msgs = [
+  {<span class="s">"role"</span>:<span class="s">"system"</span>,<span class="s">"content"</span>:
+   <span class="s">"Write one social post as strict JSON with keys: "</span>
+   <span class="s">"hook, body, cta, hashtags. Warm, second-person. Output ONLY JSON."</span>},
+  {<span class="s">"role"</span>:<span class="s">"user"</span>,<span class="s">"content"</span>:
+   <span class="s">'{"brand":"Brightpath","angle":"flexible work","cta":"waitlist"}'</span>},
+]
+ids = tok.apply_chat_template(msgs, add_generation_prompt=<span class="k">True</span>, return_tensors=<span class="s">"pt"</span>).to(<span class="s">"cuda"</span>)
+out = model.generate(input_ids=ids, max_new_tokens=<span class="n">300</span>, temperature=<span class="n">0.7</span>)
+<span class="k">print</span>(tok.decode(out[<span class="n">0</span>][ids.shape[<span class="n">1</span>]:], skip_special_tokens=<span class="k">True</span>))</pre></div>
+        <div class="call why"><div class="h">◆ What to look for</div><p>Read the output critically. Is it valid JSON? Does the voice sound <i>generic</i> — "Join our team of dedicated professionals!" — rather than a distinct brand? Did it get the brand name slightly wrong, or invent a fact you never gave it? Those flaws are exactly what training will fix.</p></div>
+        <div class="check"><input type="checkbox" id="c1"><label for="c1">I ran it and I can see the output is <b>generic / off-brand</b>.</label></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 2 — HOW LITTLE YOU TRAIN ================= -->
+  <section class="band">
+    <div class="band-tag">Part 2 · the trick</div>
+    <h2>You train ~1% of the model</h2>
+    <p>Full fine-tuning is too big for a free GPU. QLoRA is two hacks stacked: freeze the giant base model and train a tiny <b>overlay</b> (LoRA — like a git-diff over a frozen image), and store the frozen base in 4-bit to save memory. Let's see how little you actually train.</p>
+
+    <div class="step" data-step="s2">
+      <div class="step-head">
+        <div class="step-num">2</div>
+        <div class="step-titles"><h3>Attach the LoRA overlay & count the trainable params</h3><div class="sub">The number that reframes everything</div></div>
+        <div class="step-chev">▸</div>
+      </div>
+      <div class="step-body">
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 4 · attach overlay</span><button class="copy-btn">Copy</button></div><pre>model = FastLanguageModel.get_peft_model(
+    model, r=<span class="n">16</span>, lora_alpha=<span class="n">16</span>,
+    target_modules=[<span class="s">"q_proj"</span>,<span class="s">"k_proj"</span>,<span class="s">"v_proj"</span>,<span class="s">"o_proj"</span>,
+                    <span class="s">"gate_proj"</span>,<span class="s">"up_proj"</span>,<span class="s">"down_proj"</span>])
+model.print_trainable_parameters()</pre></div>
+        <div class="expect"><div class="h">You should see something like</div><pre>trainable params: 18,464,768 || all params: 1,562,179,072 || trainable%: 1.18</pre></div>
+        <div class="call why"><div class="h">◆ Read the number</div><p>You're steering a 1.56-billion-parameter model by training ~18 million of them — just over <b>1%</b>. The other 99% stays frozen. The knob <code>r=16</code> sets the overlay size; bigger <code>r</code> = more capacity but overfits faster on small data.</p></div>
+        <div class="check"><input type="checkbox" id="c2"><label for="c2">I see <b>trainable% ≈ 1.18</b>.</label></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 3 — DATA ================= -->
+  <section class="band">
+    <div class="band-tag">Part 3 · the real work</div>
+    <h2>Give it examples to learn from</h2>
+    <p>Fine-tuning isn't instructions — it's worked examples. The model copies the <code>output</code> field, so <b>you</b> must own that field: it has to be the gold standard, better than what the base model produces on its own.</p>
+    <div class="call warn"><div class="h">▲ The iron law of datasets</div><p>Never let the model write its own training outputs. If you train it on its own generic output, you teach it to be generic forever. A human who knows the target voice writes or approves every <code>output</code>.</p></div>
+
+    <div class="step" data-step="s3">
+      <div class="step-head">
+        <div class="step-num">3</div>
+        <div class="step-titles"><h3>Create a tiny gold dataset</h3><div class="sub">3 examples — enough to see the mechanism</div></div>
+        <div class="step-chev">▸</div>
+      </div>
+      <div class="step-body">
+        <p>Three hand-written examples. Notice two things: the voice is consistent and specific, and each <code>output</code> only uses facts from its own <code>input</code>. Swap in your own brand/voice later — for now, run these to see it work.</p>
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 5 · write the dataset</span><button class="copy-btn">Copy</button></div><pre><span class="k">import</span> json
+SYS = (<span class="s">"Write one social post as strict JSON with keys: "</span>
+       <span class="s">"hook, body, cta, hashtags. Warm, second-person, treats the "</span>
+       <span class="s">"reader as a skilled professional. Only use facts in the input."</span>)
+
+gold = [
+ {<span class="s">"inp"</span>:<span class="s">'{"brand":"Brightpath","angle":"fair pay","pay_hours":48}'</span>,
+  <span class="s">"out"</span>:<span class="s">'{"hook":"Your work. Your rate. Your call.","body":"Take the cases that fit your week and keep your full rate — no cut taken. Paid within about 48 hours.","cta":"Join the waitlist","hashtags":["#brightpath"]}'</span>},
+ {<span class="s">"inp"</span>:<span class="s">'{"brand":"Brightpath","angle":"fast pay","pay_hours":24}'</span>,
+  <span class="s">"out"</span>:<span class="s">'{"hook":"Finish today. Paid tomorrow.","body":"No chasing anyone for money you already earned. Your payout lands within about 24 hours of the visit.","cta":"Join the waitlist","hashtags":["#brightpath"]}'</span>},
+ {<span class="s">"inp"</span>:<span class="s">'{"brand":"Brightpath","angle":"choose your work","pay_hours":48}'</span>,
+  <span class="s">"out"</span>:<span class="s">'{"hook":"You decide what. You decide when.","body":"Browse cases and pick only the ones that fit your life. Full rate, no cut, paid within about 48 hours.","cta":"Join the waitlist","hashtags":["#brightpath"]}'</span>},
+]
+<span class="k">with</span> open(<span class="s">"gold.jsonl"</span>,<span class="s">"w"</span>) <span class="k">as</span> f:
+    <span class="k">for</span> r <span class="k">in</span> gold:
+        f.write(json.dumps({<span class="s">"instruction"</span>:SYS,<span class="s">"input"</span>:r[<span class="s">"inp"</span>],<span class="s">"output"</span>:r[<span class="s">"out"</span>]})+<span class="s">"\n"</span>)
+<span class="k">print</span>(<span class="s">"wrote"</span>, len(gold), <span class="s">"examples"</span>)</pre></div>
+        <div class="call why"><div class="h">◆ Why the same angle appears with different pay_hours</div><p>Examples 1 and 3 share an angle but <code>pay_hours</code> differs (48 vs 48) while example 2 uses 24 — the <code>output</code> number always matches its own <code>input</code>. That contrast is what teaches the model "pull the number from the input", not "memorise 48".</p></div>
+        <div class="check"><input type="checkbox" id="c3"><label for="c3">Dataset written (<b>wrote 3 examples</b>).</label></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 4 — TRAIN ================= -->
+  <section class="band">
+    <div class="band-tag">Part 4 · the payoff</div>
+    <h2>Train it & watch the loss fall</h2>
+    <p>Training is a loop: predict → measure how wrong (the <b>loss</b>) → nudge the overlay → repeat. You watch one number go down.</p>
+
+    <div class="step" data-step="s4">
+      <div class="step-head">
+        <div class="step-num">4</div>
+        <div class="step-titles"><h3>Run the training loop</h3><div class="sub">~40 seconds on a T4</div></div>
+        <div class="step-chev">▸</div>
+      </div>
+      <div class="step-body">
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 6 · train</span><button class="copy-btn">Copy</button></div><pre><span class="k">from</span> datasets <span class="k">import</span> load_dataset
+<span class="k">from</span> trl <span class="k">import</span> SFTTrainer, SFTConfig
+
+ds = load_dataset(<span class="s">"json"</span>, data_files=<span class="s">"gold.jsonl"</span>)[<span class="s">"train"</span>]
+<span class="k">def</span> fmt(x):
+    <span class="k">return</span> {<span class="s">"text"</span>:
+        <span class="s">f"&lt;|im_start|&gt;system\n{x['instruction']}&lt;|im_end|&gt;\n"</span>
+        <span class="s">f"&lt;|im_start|&gt;user\n{x['input']}&lt;|im_end|&gt;\n"</span>
+        <span class="s">f"&lt;|im_start|&gt;assistant\n{x['output']}&lt;|im_end|&gt;"</span>}
+ds = ds.map(fmt)
+
+trainer = SFTTrainer(model=model, tokenizer=tok, train_dataset=ds,
+    args=SFTConfig(per_device_train_batch_size=<span class="n">1</span>, gradient_accumulation_steps=<span class="n">2</span>,
+        num_train_epochs=<span class="n">10</span>, learning_rate=<span class="n">2e-4</span>, logging_steps=<span class="n">1</span>,
+        output_dir=<span class="s">"out"</span>, seed=<span class="n">42</span>))
+trainer.train()</pre></div>
+        <div class="expect"><div class="h">You should see loss trending down, roughly</div><pre>Step  Loss
+1     4.01
+5     3.21
+10    2.26
+15    1.62
+20    1.16</pre></div>
+        <p class="note">It won't fall perfectly — it wiggles step to step because each step sees different data. Read the <b>trend</b>, not any single step. This is the shape you're looking for:</p>
+
+        <div class="chartcard">
+          <h3>A healthy loss curve</h3>
+          <p class="cap">Real run: 20 steps, ~37 seconds. Lower = predictions closer to your gold outputs.</p>
+          <svg viewBox="0 0 640 300" role="img" aria-label="Line chart of training loss falling from about 4.0 to about 1.2 over 20 steps">
+            <!-- gridlines + y labels -->
+            <g id="grid"></g>
+            <!-- axis -->
+            <line x1="52" y1="20" x2="52" y2="252" stroke="var(--line)" stroke-width="1.5"/>
+            <line x1="52" y1="252" x2="620" y2="252" stroke="var(--line)" stroke-width="1.5"/>
+            <text x="336" y="288" text-anchor="middle" fill="var(--muted)" font-size="13" font-family="var(--mono)">training step →</text>
+            <polyline id="lossline" fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" points=""/>
+            <circle id="lossend" r="5.5" fill="var(--accent)"/>
+          </svg>
+        </div>
+        <div class="check"><input type="checkbox" id="c4"><label for="c4">My loss dropped from ~4 toward ~1. <b>It learned.</b></label></div>
+      </div>
+    </div>
+
+    <div class="step" data-step="s5">
+      <div class="step-head">
+        <div class="step-num">5</div>
+        <div class="step-titles"><h3>Generate again — hear the difference</h3><div class="sub">Same prompt as Step 1</div></div>
+        <div class="step-chev">▸</div>
+      </div>
+      <div class="step-body">
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 7 · generate from the tuned model</span><button class="copy-btn">Copy</button></div><pre>FastLanguageModel.for_inference(model)
+ids = tok.apply_chat_template([
+  {<span class="s">"role"</span>:<span class="s">"system"</span>,<span class="s">"content"</span>:SYS},
+  {<span class="s">"role"</span>:<span class="s">"user"</span>,<span class="s">"content"</span>:<span class="s">'{"brand":"Brightpath","angle":"flexible work","pay_hours":48}'</span>},
+], add_generation_prompt=<span class="k">True</span>, return_tensors=<span class="s">"pt"</span>).to(<span class="s">"cuda"</span>)
+out = model.generate(input_ids=ids, max_new_tokens=<span class="n">300</span>, temperature=<span class="n">0.7</span>)
+<span class="k">print</span>(tok.decode(out[<span class="n">0</span>][ids.shape[<span class="n">1</span>]:], skip_special_tokens=<span class="k">True</span>))</pre></div>
+        <p>Compare it to Step 1. The voice should have swung hard toward your examples — the brand tag correct, the CTA right, the tone warm.</p>
+        <div class="call warn"><div class="h">▲ Look closely — it may now invent facts</div><p>On only 3 examples the model <i>overfits</i>: it learns the voice but may state a payout time or detail that was never in your input. Fluent and completely made up. That's not magic failing — it's the lesson in the next part.</p></div>
+        <div class="check"><input type="checkbox" id="c5"><label for="c5">The new output clearly sounds <b>on-brand</b> vs. Step 1.</label></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 5 — WHY IT FAILS + FIX ================= -->
+  <section class="band">
+    <div class="band-tag">Part 5 · do it properly</div>
+    <h2>Why the toy hallucinates — and the real fix</h2>
+    <p>You just saw a model that <i>sounds</i> right and may be factually wrong — the most dangerous kind of output, because it's believable. Two things cause it, and both are fixable.</p>
+
+    <details class="q">
+      <summary>Why did it invent facts after training?</summary>
+      <div class="ans">
+        <p><b>Too little data.</b> With 3 examples it couldn't learn "the fact comes from the input" — it only saw a few fact-shaped patterns and imitated their shape, filling in plausible-sounding numbers.</p>
+        <p>The fix: more varied examples where the <b>same task appears with different input values</b>, so the model learns the fact is a variable, not a constant.</p>
+      </div>
+    </details>
+    <details class="q">
+      <summary>How many examples, and how many epochs?</summary>
+      <div class="ans">
+        <p><b>~150+ varied, human-approved examples</b>, and <b>2–3 epochs</b> (not 10). More data + fewer passes = learns the pattern instead of memorising specific posts.</p>
+        <p>Also hold out ~10% as a <b>validation set</b> the model never trains on. Training loss always falls; validation loss is the honest signal. When val loss starts rising while train loss keeps falling, you're overfitting — stop.</p>
+      </div>
+    </details>
+    <details class="q">
+      <summary>How do I build 150 examples without writing them all by hand?</summary>
+      <div class="ans">
+        <p>Write ~10 truly gold examples yourself. Then have a <b>frontier model draft more</b>, giving it your gold ones as the voice reference — and <b>you approve or edit every single one</b>. The frontier model drafts; a human who knows the voice is the final judge. Nothing enters the dataset unapproved.</p>
+      </div>
+    </details>
+
+    <div class="step" data-step="s6">
+      <div class="step-head">
+        <div class="step-num">6</div>
+        <div class="step-titles"><h3>Add a validator (your safety net)</h3><div class="sub">~30 lines, useful even without fine-tuning</div></div>
+        <div class="step-chev">▸</div>
+      </div>
+      <div class="step-body">
+        <p>Never ship raw model output. This function fails a post on objective violations — invalid JSON, missing brand tag, or a fact that isn't in the config. Run it on every generation.</p>
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 8 · the validator</span><button class="copy-btn">Copy</button></div><pre><span class="k">import</span> json
+<span class="k">def</span> validate(raw, config):
+    fails = []
+    <span class="k">try</span>: post = json.loads(raw)
+    <span class="k">except</span>: <span class="k">return</span> <span class="k">False</span>, [<span class="s">"invalid_json"</span>]
+    <span class="k">if</span> set(post) != {<span class="s">"hook"</span>,<span class="s">"body"</span>,<span class="s">"cta"</span>,<span class="s">"hashtags"</span>}:
+        fails.append(<span class="s">"wrong_keys"</span>)
+    <span class="k">if</span> <span class="s">"#brightpath"</span> <span class="k">not in</span> [h.lower() <span class="k">for</span> h <span class="k">in</span> post.get(<span class="s">"hashtags"</span>,[])]:
+        fails.append(<span class="s">"missing_brand_tag"</span>)
+    <span class="c"># fact-leak: flag day/time words not grounded in config (starter heuristic)</span>
+    body = post.get(<span class="s">"body"</span>,<span class="s">""</span>).lower()
+    <span class="k">for</span> w <span class="k">in</span> [<span class="s">"monday"</span>,<span class="s">"thursday"</span>,<span class="s">"minute"</span>,<span class="s">"week"</span>]:
+        <span class="k">if</span> w <span class="k">in</span> body: fails.append(<span class="s">f"possible_fact_leak:{w}"</span>)
+    <span class="k">return</span> (len(fails)==<span class="n">0</span>), fails
+
+bad = <span class="s">'{"hook":"x","body":"We pay out Thursday nights in 2 minutes.","cta":"Go","hashtags":["#brand"]}'</span>
+<span class="k">print</span>(validate(bad, {<span class="s">"pay_hours"</span>:<span class="n">48</span>}))</pre></div>
+        <div class="expect"><div class="h">You should see</div><pre>(False, ['missing_brand_tag', 'possible_fact_leak:thursday', 'possible_fact_leak:minute'])</pre></div>
+        <div class="call why"><div class="h">◆ What just happened</div><p>Thirty lines of plain Python caught a fluent lie your eyes might have waved through. That's evaluation: mechanical, run on every output, never fooled by good-sounding copy. In production you'd also inject high-stakes facts via slots (so the model <i>can't</i> write them wrong) and add an LLM-as-judge grounding check.</p></div>
+        <div class="check"><input type="checkbox" id="c6"><label for="c6">The validator caught the <b>fact leak</b>.</label></div>
+      </div>
+    </div>
+
+    <div class="step" data-step="s7">
+      <div class="step-head">
+        <div class="step-num">7</div>
+        <div class="step-titles"><h3>Save your model (the portable adapter)</h3><div class="sub">Just the overlay — tens of MB</div></div>
+        <div class="step-chev">▸</div>
+      </div>
+      <div class="step-body">
+        <p>Your fine-tune is only the ~18M-param overlay — a small file you can carry anywhere and snap back onto the 4-bit base.</p>
+        <div class="cell"><div class="cell-bar"><span class="tag">cell 9 · save</span><button class="copy-btn">Copy</button></div><pre>model.save_pretrained(<span class="s">"my-adapter"</span>)
+tok.save_pretrained(<span class="s">"my-adapter"</span>)
+<span class="c"># download: Files panel (left) → my-adapter → ⋮ → Download,</span>
+<span class="c"># or zip it:</span>
+!zip -r my-adapter.zip my-adapter &gt; /dev/null && <span class="k">print</span>(<span class="s">"zipped ✓"</span>)</pre></div>
+        <div class="check"><input type="checkbox" id="c7"><label for="c7">Adapter saved. <b>I have a fine-tuned model.</b></label></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="finish" id="finish">
+    <h2 id="finish-h">You've fine-tuned a model 🎉</h2>
+    <p id="finish-p">Finish the checkpoints above and this fills in. From here: swap in your own voice and ~150 varied examples, drop to 2–3 epochs, add a validation set, and run the validator on every output.</p>
+    <div class="share">Built something with it? Tell me what you made — @ItsLokanath</div>
+    <p style="margin-top:18px"><button class="reset" id="resetBtn">Reset my progress</button></p>
+  </div>
+
+  <footer>
+    A hands-on companion to the fine-tuning walkthrough. Runs entirely in your own free Colab — nothing here collects your data.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY="ftlab.v1";
+  var steps=["c0","c1","c2","c3","c4","c5","c6","c7"];
+
+  // ---- state (best-effort localStorage) ----
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+  function save(s){ try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){} }
+  var state=load();
+
+  // ---- theme toggle ----
+  var tbtn=document.getElementById("themeBtn");
+  function applyTheme(t){ if(t) document.documentElement.setAttribute("data-theme",t); }
+  applyTheme(state.theme);
+  tbtn.addEventListener("click",function(){
+    var cur=document.documentElement.getAttribute("data-theme");
+    var mqDark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = cur ? (cur==="dark"?"light":"dark") : (mqDark?"light":"dark");
+    applyTheme(next); state.theme=next; save(state);
+  });
+
+  // ---- collapse / expand steps ----
+  document.querySelectorAll(".step").forEach(function(st){
+    var id=st.getAttribute("data-step");
+    if(state["open_"+id]) st.classList.add("open");
+    st.querySelector(".step-head").addEventListener("click",function(){
+      st.classList.toggle("open");
+      state["open_"+id]=st.classList.contains("open"); save(state);
+    });
+  });
+  // open step 0 by default on first visit
+  if(!state.visited){ var s0=document.querySelector('.step[data-step="s0"]'); if(s0) s0.classList.add("open"); state.visited=true; save(state); }
+
+  // ---- checkboxes drive progress + done state ----
+  function refresh(){
+    var done=0;
+    steps.forEach(function(cid){
+      var cb=document.getElementById(cid);
+      if(!cb) return;
+      var checked=!!state[cid];
+      cb.checked=checked;
+      var card=cb.closest(".step");
+      if(card) card.classList.toggle("done", checked);
+      if(checked) done++;
+    });
+    var pct=Math.round(done/steps.length*100);
+    document.getElementById("pfill").style.width=pct+"%";
+    document.getElementById("ppct").textContent=pct+"%";
+    var fh=document.getElementById("finish-h");
+    if(pct===100){ fh.textContent="You've fine-tuned a model 🎉  (all checkpoints cleared)"; }
+    else { fh.textContent="You've fine-tuned a model 🎉"; }
+  }
+  steps.forEach(function(cid){
+    var cb=document.getElementById(cid);
+    if(!cb) return;
+    cb.addEventListener("change",function(){ state[cid]=cb.checked; save(state); refresh(); });
+  });
+  refresh();
+
+  // ---- copy buttons ----
+  document.querySelectorAll(".cell").forEach(function(cell){
+    var btn=cell.querySelector(".copy-btn");
+    var pre=cell.querySelector("pre");
+    btn.addEventListener("click",function(){
+      var text=pre.innerText;
+      function ok(){ btn.textContent="Copied ✓"; btn.classList.add("ok"); setTimeout(function(){ btn.textContent="Copy"; btn.classList.remove("ok"); },1500); }
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(ok).catch(function(){ selectFallback(pre); });
+      } else { selectFallback(pre); }
+    });
+  });
+  function selectFallback(pre){
+    var r=document.createRange(); r.selectNodeContents(pre);
+    var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  }
+
+  // ---- reset ----
+  document.getElementById("resetBtn").addEventListener("click",function(){
+    state={}; save(state);
+    steps.forEach(function(cid){ var cb=document.getElementById(cid); if(cb) cb.checked=false; });
+    document.querySelectorAll(".step").forEach(function(s){ s.classList.remove("done"); });
+    refresh();
+    window.scrollTo({top:0,behavior:"smooth"});
+  });
+
+  // ---- draw the loss curve to scale ----
+  var LOSS=[4.019965,3.834741,3.835737,3.303249,3.211906,2.847796,2.814448,2.462943,
+            2.398764,2.261367,2.020622,2.061501,1.774545,1.692537,1.618695,1.313502,
+            1.428585,1.161687,1.187164,1.302888];
+  var X0=52,X1=620,Y0=20,Y1=252,YMAX=4.4;
+  function sx(i){ return X0+i/(LOSS.length-1)*(X1-X0); }
+  function sy(v){ return Y1-(v/YMAX)*(Y1-Y0); }
+  var grid=document.getElementById("grid");
+  for(var v=1; v<=4; v++){
+    var y=sy(v);
+    var ln=document.createElementNS("http://www.w3.org/2000/svg","line");
+    ln.setAttribute("x1",X0); ln.setAttribute("x2",X1); ln.setAttribute("y1",y); ln.setAttribute("y2",y);
+    ln.setAttribute("stroke","var(--line)"); ln.setAttribute("stroke-width","1"); ln.setAttribute("stroke-dasharray","3 4");
+    grid.appendChild(ln);
+    var tx=document.createElementNS("http://www.w3.org/2000/svg","text");
+    tx.setAttribute("x",X0-8); tx.setAttribute("y",y+4); tx.setAttribute("text-anchor","end");
+    tx.setAttribute("fill","var(--muted)"); tx.setAttribute("font-size","12"); tx.setAttribute("font-family","var(--mono)");
+    tx.textContent=v.toFixed(1); grid.appendChild(tx);
+  }
+  var pts=LOSS.map(function(v,i){ return sx(i)+","+sy(v); }).join(" ");
+  document.getElementById("lossline").setAttribute("points",pts);
+  var end=document.getElementById("lossend");
+  end.setAttribute("cx",sx(LOSS.length-1)); end.setAttribute("cy",sy(LOSS[LOSS.length-1]));
+})();
+</script>
